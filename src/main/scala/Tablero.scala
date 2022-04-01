@@ -11,7 +11,24 @@ class Tablero(data: Array[Array[Ficha]]) {
 
   def CoordenadaValida(posX: Int, posY: Int): Boolean = posX > 0 && posX < GetWidht() && posY > 0 && posY < GetHeight()
 
-  def NumElementsosContiguos(posX: Int, posY: Int, ficha: Ficha, tablero: Tablero): Int = {
+  //Imprime la fila parametro del tablero parametro.
+  def ImprimirFila(tablero:Array[Array[Ficha]],fila: Int): Unit = {
+    if (tablero.length > 0) {
+      print(tablero.head(fila))
+      ImprimirFila(tablero.tail, fila)
+    }
+  }
+
+  //Imprime el tablero parametro recursivamente por filas.
+  def ImprimirTablero(tablero:Array[Array[Ficha]], fila:Int): Unit ={
+    if (fila < tablero.head.length){
+      ImprimirFila(tablero,fila)
+      print("\n")
+      ImprimirTablero(tablero,fila+1)
+    }
+  }
+
+  def NumElementosContiguos(posX: Int, posY: Int, ficha: Ficha, tablero: Tablero): Int = {
     tablero.GetElem(posX, posY) match {
       case ficha => {
         val nuevoTab = tablero.SetElem(posX, posY, 0)
