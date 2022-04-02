@@ -1,12 +1,12 @@
-type Ficha = Int;
-type FichasTablero = List[List[Ficha]]
-
 /**
  * Representa un estado del tablero.
  *
  * @param data Array de arrays con las fichas.
  */
-class Tablero(data: FichasTablero) {
+class Tablero(data: List[List[Int]]) {
+
+  type Ficha = Int;
+  type FichasTablero = List[List[Ficha]]
 
   final val VALOR_FICHA_VACIA: Ficha = 0
   final val VALOR_FICHA_BOMBA: Ficha = 8
