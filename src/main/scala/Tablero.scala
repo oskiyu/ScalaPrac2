@@ -1,3 +1,5 @@
+import main.Listas
+
 /**
  * Representa un estado del tablero.
  *
@@ -15,29 +17,24 @@ class Tablero(data: List[List[Int]]) {
 
   private val rng = scala.util.Random
 
-  private def GetElemIndex(posX: Int, posY: Int): Int = {
-    posY * GetWidht() + posX
-  }
 
-  //def GenerarTableroAleatorio(sizeX: Int, sizeY: Int): FichasTablero = { }
-
-  def GenerarColumnaAleatoria(numElemRestantes: Int): List[Ficha] = {
+  private def GenerarColumnaAleatoria(numElemRestantes: Int): List[Ficha] = {
     if (numElemRestantes == 0) List()
     else (rng.nextInt(8) + 1)::GenerarColumnaAleatoria(numElemRestantes - 1)
   }
-  def GenerarTableroAleatorio(numColumnasRestantes: Int, numElementosPorColumna: Int): FichasTablero = {
+  private def GenerarTableroAleatorio(numColumnasRestantes: Int, numElementosPorColumna: Int): FichasTablero = {
     if (numColumnasRestantes == 1) List(GenerarColumnaAleatoria(numElementosPorColumna))
     else GenerarColumnaAleatoria(numElementosPorColumna)::GenerarTableroAleatorio(numColumnasRestantes - 1, numElementosPorColumna)
   }
 
-  /*def this(width: Int, height: Int) {
-    this()
-  }*/
+  def this(width: Int, height: Int) {
+    this(GenerarTableroAleatorio(width, height))
+  }
 
   /** Número de columnas. */
   def GetWidht(): Int = data.length
   /** Número de filas. */
-  def GetHeight(): Int = data(0).length
+  def GetHeight(): Int = data.head.length
 
   /** Comprueba si las coordenadas están dentro del tablero. */
   def CoordenadaValida(posX: Int, posY: Int): Boolean = posX > 0 && posX < GetWidht() && posY > 0 && posY < GetHeight()
@@ -83,8 +80,10 @@ class Tablero(data: List[List[Int]]) {
       case ficha => {
         val nuevoTab = tablero.SetElem(posX, posY, VALOR_FICHA_MARCADA)
 
-        (1 + NumElementosContiguos(posX + 1, posY, ficha, nuevoTab) + NumElementosContiguos(posX - 1, posY, ficha, nuevoTab)
-          + NumElementosContiguos(posX, posY + 1, ficha, nuevoTab) + NumElementosContiguos(posX, posY - 1, ficha, nuevoTab))
+        (1 + NumElementosContiguos(posX + 1, posY,     ficha, nuevoTab)
+           + NumElementosContiguos(posX - 1, posY,     ficha, nuevoTab)
+           + NumElementosContiguos(posX,     posY + 1, ficha, nuevoTab)
+           + NumElementosContiguos(posX,     posY - 1, ficha, nuevoTab))
       }
 
       case _ => 0
@@ -141,7 +140,6 @@ class Tablero(data: List[List[Int]]) {
     SePuedeMarcar(posX, posY) match {
       case true =>
         Marcar(posX, posY, GetElem(posX, posY))
-        // TODO: eliminar fichas.
         // TODO: mover fichas
       case false =>
         SetElem(posX, posY, VALOR_FICHA_VACIA)
@@ -167,6 +165,7 @@ class Tablero(data: List[List[Int]]) {
    *
    * @param x Columna.
    * @param y Fila.
+   * @throws Exception si las coordenadas no son válidas.
    */
   def GetElem(x: Int, y: Int): Ficha = {
     if (!CoordenadaValida(x, y)) throw new Exception("Coordenada inválida.")
@@ -184,14 +183,12 @@ class Tablero(data: List[List[Int]]) {
    * @param y Fila de la ficha que se va a sustituir.
    * @param valor Nueva ficha.
    * @return Tablero con la ficha sustituida.
+   * @throws Exception si las coordenadas no son válidas.
    */
   def SetElem(x: Int, y: Int, valor: Ficha): Tablero = {
     if (!CoordenadaValida(x, y)) throw new Exception("Coordenada inválida.")
 
-    val nuevoTab = data
-    //nuevoTab(GetElemIndex(x, y)) = valor
-
-    new Tablero(nuevoTab)
+    new Tablero(Listas.SetElem(x, Listas.SetElem(y, valor, data(x)), data))
   }
 
 }
