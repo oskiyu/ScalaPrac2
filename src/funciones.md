@@ -1,6 +1,6 @@
 # Bloques Mayas
 
-- Tablero 2D
+- main.Tablero 2D
 - Ficha representada por un valor entre 8 pposibles.
 
 #### Estados

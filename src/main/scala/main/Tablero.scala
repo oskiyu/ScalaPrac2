@@ -1,38 +1,72 @@
+package main
+
+/**
+ * Objeto estático con las funciones para crear un tablero aleatorio.
+ * Ya que la función debe ejecutarse antes que el propio constructor, no podemos
+ * usar una función de esa clase: debemos sacarla a un objeto singleton.
+ */
+object Tablero {
+
+  /** De momento, la ficha se representa por un número. */
+  type Ficha = Int;
+  /** El tablero es una lista de listas (lista de columnas). */
+  type FichasTablero = List[List[Ficha]]
+
+  private val rng = scala.util.Random
+
+  /**
+   * Genera una columna (una lista) de números aleatorios.
+   * Los números estarán dentro de los límites de las fichas (1 - 8),
+   * ambos incluidos.
+   *
+   * @param numElemRestantes Número de elementos añadidos a la lista.
+   * @return Lista aleatoria.
+   */
+  private def GenerarColumnaAleatoria(numElemRestantes: Int): List[Ficha] = {
+    if (numElemRestantes == 0) List()
+    else (rng.nextInt(8) + 1)::GenerarColumnaAleatoria(numElemRestantes - 1)
+  }
+
+  /**
+   * Genera un tablero con números aleatorios.
+   * Los números estarán dentro de los límites de las fichas (1 - 8),
+   * ambos incluidos.
+   *
+   * @see GenerarColumnaAleatoria
+   * @param numColumnasRestantes Número de columnas (tamaño en X).
+   * @param numElementosPorColumna Número de filas (tamaño en Y).
+   * @return Fichas aleatorias del tablero.
+   */
+  private def GenerarTableroAleatorio(numColumnasRestantes: Int, numElementosPorColumna: Int): FichasTablero = {
+    if (numColumnasRestantes == 1) List(GenerarColumnaAleatoria(numElementosPorColumna))
+    else GenerarColumnaAleatoria(numElementosPorColumna)::GenerarTableroAleatorio(numColumnasRestantes - 1, numElementosPorColumna)
+  }
+
+}
+
 /**
  * Representa un estado del tablero.
  *
  * @param data Array de arrays con las fichas.
  */
-class Tablero(data: List[List[Int]]) {
+class Tablero(data: List[List[Int]], puntuacion: Int, vidas: Int) {
 
-  type Ficha = Int;
-  type FichasTablero = List[List[Ficha]]
+  import Tablero._
 
   final val VALOR_FICHA_VACIA: Ficha = 0
   final val VALOR_FICHA_BOMBA: Ficha = 8
   final val VALOR_FICHA_MARCADA: Ficha = VALOR_FICHA_VACIA
   final val NUM_FICHAS_CONTIGUAS: Int = 3
 
-  private val rng = scala.util.Random
-
-  private def GetElemIndex(posX: Int, posY: Int): Int = {
-    posY * GetWidht() + posX
+  /**
+   * Crea un nuevo tablero con fichas aleatorias.
+   *
+   * @param width Número de columnas.
+   * @param height Número de filas.
+   */
+  def this(width: Int, height: Int, vidas: Int) = {
+    this(Tablero.GenerarTableroAleatorio(width, height), puntuacion = 0, vidas = vidas)
   }
-
-  //def GenerarTableroAleatorio(sizeX: Int, sizeY: Int): FichasTablero = { }
-
-  def GenerarColumnaAleatoria(numElemRestantes: Int): List[Ficha] = {
-    if (numElemRestantes == 0) List()
-    else (rng.nextInt(8) + 1)::GenerarColumnaAleatoria(numElemRestantes - 1)
-  }
-  def GenerarTableroAleatorio(numColumnasRestantes: Int, numElementosPorColumna: Int): FichasTablero = {
-    if (numColumnasRestantes == 1) List(GenerarColumnaAleatoria(numElementosPorColumna))
-    else GenerarColumnaAleatoria(numElementosPorColumna)::GenerarTableroAleatorio(numColumnasRestantes - 1, numElementosPorColumna)
-  }
-
-  /*def this(width: Int, height: Int) {
-    this()
-  }*/
 
   /** Número de columnas. */
   def GetWidht(): Int = data.length
@@ -42,22 +76,33 @@ class Tablero(data: List[List[Int]]) {
   /** Comprueba si las coordenadas están dentro del tablero. */
   def CoordenadaValida(posX: Int, posY: Int): Boolean = posX > 0 && posX < GetWidht() && posY > 0 && posY < GetHeight()
 
-  //Imprime la fila parametro del tablero parametro.
-  def ImprimirFila(tablero: FichasTablero,fila: Int): Unit = {
+
+  /** Imprime una fila del tablero. */
+  private def ImprimirFila(tablero: FichasTablero, fila: Int): Unit = {
     if (tablero.length > 0) {
       print(tablero.head(fila))
       ImprimirFila(tablero.tail, fila)
     }
   }
 
-  //Imprime el tablero parametro recursivamente por filas.
-  def ImprimirTablero(tablero: FichasTablero, fila:Int): Unit ={
-    if (fila < tablero.head.length){
-      ImprimirFila(tablero,fila)
-      print("\n")
-      ImprimirTablero(tablero,fila+1)
-    }
+  /**
+   * Imprime el tablero de manera recursiva (por filas).
+   *
+   * @param fila Fila a imprimir (empieza en 0 y va subiendo).
+   */
+  private def ImprimirTablero(fila:Int): Unit ={
+    if (fila < 0) throw new Exception(s"Se ha intentado imprimir la fila {$fila} menor que 0.")
+    if (fila >= GetHeight()) throw new Exception(s"Se ha intentado imprimir la fila {$fila}, pero solo hay {$GetHeight()} filas.")
+
+    ImprimirFila(data, fila)
+    print("\n")
+
+    if (fila + 1 < GetHeight())
+      ImprimirTablero(fila + 1)
   }
+
+  /** Imprime el tablero. */
+  def Imprimir(): Unit = { ImprimirTablero(0) }
 
   /**
    * Cuenta el número de fichas contiguas del mismo tipo.
@@ -75,12 +120,12 @@ class Tablero(data: List[List[Int]]) {
    * @param posX Columna de la ficha.
    * @param posY Fila de la ficha.
    * @param ficha Ficha que estamos contando.
-   * @param tablero Tablero anterior.
+   * @param tablero main.Tablero anterior.
    * @return Número de fichas del mismo tipo.
    */
   private def NumElementosContiguos(posX: Int, posY: Int, ficha: Ficha, tablero: Tablero): Int = {
     tablero.GetElem(posX, posY) match {
-      case ficha => {
+      case x if (x != 0) => {
         val nuevoTab = tablero.SetElem(posX, posY, VALOR_FICHA_MARCADA)
 
         (1 + NumElementosContiguos(posX + 1, posY, ficha, nuevoTab) + NumElementosContiguos(posX - 1, posY, ficha, nuevoTab)
@@ -111,7 +156,7 @@ class Tablero(data: List[List[Int]]) {
    * @param posX Columna de la ficha a marcar.
    * @param posY Fila de la ficha a marcar.
    * @param fichaMarcada Ficha que queremos marcar.
-   * @return Tablero con todas las fichas marcadas.
+   * @return main.Tablero con todas las fichas marcadas.
    */
   private def Marcar(posX: Int, posY: Int, fichaMarcada: Ficha): Tablero = {
     GetElem(posX, posY) match {
@@ -141,10 +186,12 @@ class Tablero(data: List[List[Int]]) {
     SePuedeMarcar(posX, posY) match {
       case true =>
         Marcar(posX, posY, GetElem(posX, posY))
-        // TODO: eliminar fichas.
         // TODO: mover fichas
+        // TODO: puntuación
       case false =>
         SetElem(posX, posY, VALOR_FICHA_VACIA)
+        // TODO: mover fichas
+        // TODO: puntuación
         // TODO: quitar vidas
     }
 
@@ -183,15 +230,12 @@ class Tablero(data: List[List[Int]]) {
    * @param x Columna de la ficha que se va a sustituir.
    * @param y Fila de la ficha que se va a sustituir.
    * @param valor Nueva ficha.
-   * @return Tablero con la ficha sustituida.
+   * @return main.Tablero con la ficha sustituida.
    */
   def SetElem(x: Int, y: Int, valor: Ficha): Tablero = {
     if (!CoordenadaValida(x, y)) throw new Exception("Coordenada inválida.")
 
-    val nuevoTab = data
-    //nuevoTab(GetElemIndex(x, y)) = valor
-
-    new Tablero(nuevoTab)
+    new Tablero(Listas.SetElem(x, Listas.SetElem(y, valor, data(x)), data))
   }
 
 }
