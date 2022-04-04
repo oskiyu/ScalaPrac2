@@ -1,10 +1,12 @@
 package main
 
+/** Objeto con funciones básicas para listas. */
 object Listas {
 
   /**
    * Cambia el valor del elemento en la posición dada.
    *
+   * @throws Exception, si la posición no está dentro de los límites de la lista.
    * @param pos Posición del elemento (empieza en 0).
    * @param elem Nuevo valor.
    * @param lista Lista original.
