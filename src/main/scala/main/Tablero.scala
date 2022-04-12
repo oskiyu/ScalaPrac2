@@ -237,5 +237,67 @@ class Tablero(data: List[List[Int]], puntuacion: Int, vidas: Int) {
 
     new Tablero(Listas.SetElem(x, Listas.SetElem(y, valor, data(x)), data))
   }
+  /**
+   * Elimina recursivamente los elementos iguales a 0 de una lista, desplazando la columna
+   * @param lista Columna a eliminar los elementos
+   * @return La lista sin elementos 0, desplazando los elementos, o una lista vacía si solo había elementos 0
+   */
+  def elimina0(lista: List[Int]): List[Int] = {
+    lista.length match {
+      case 1 => {
+        lista.head match {
+          case 0 => {
+            List()
+          }
+          case _ => {
+            lista.head :: List()
+          }
 
+        }
+
+      }
+      case _ => {
+        lista.head match {
+          case 0 => {
+            elimina0(lista.tail)
+          }
+          case _ => {
+            lista.head :: elimina0(lista.tail)
+          }
+
+        }
+      }
+    }
+  }
+  /**
+   * Desplaza las columnas de un tablero, hacia la izquierda si se quedan vacias y desplaza los elementos de las propias columnas hacia abajo
+   * @param data Los datos del tablero a desplazar
+   * @return Los datos nuevos o una lista vacia si todos los elemntos son 0
+   */
+  def desplazarColumnas(data:List[List[Int]]): List[List[Int]] ={
+    data.length match {
+      case 1 =>{
+        val columnaNueva = elimina0(data.head)
+        columnaNueva match{
+          case List() => {
+            List()
+          }
+          case _ =>{
+            columnaNueva :: List()
+          }
+        }
+      }
+      case _ =>{
+        val columnaNueva = elimina0(data.head)
+        columnaNueva match{
+          case List() => {
+            desplazarColumnas(data.tail)
+          }
+          case _ =>{
+            columnaNueva :: desplazarColumnas(data.tail)
+          }
+        }
+      }
+    }
+  }
 }
