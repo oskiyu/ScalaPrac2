@@ -23,4 +23,18 @@ object Listas {
      }
   }
 
+  final def GetElem[T](lista: List[T], pos: Int): T = {
+    pos match {
+      case 0 => lista.head
+      case _ => GetElem(lista.tail, pos - 1)
+    }
+  }
+
+  final def GenerarLista[T](value: T, length: Int): List[T] = {
+    length match {
+      case 0 => List()
+      case _ => value::GenerarLista(value, length - 1)
+    }
+  }
+
 }
