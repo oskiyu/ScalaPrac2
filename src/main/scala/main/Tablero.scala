@@ -1,5 +1,7 @@
 package main
 
+import scala.annotation.tailrec
+
 /**
  * Objeto estático con las funciones para crear un tablero aleatorio.
  * Ya que la función debe ejecutarse antes que el propio constructor, no podemos
@@ -8,12 +10,15 @@ package main
 object Tablero {
 
   /** De momento, la ficha se representa por un número. */
-  type Ficha = Int;
+  type Ficha = Int
 
   /** El tablero es una lista de listas (lista de columnas). */
   type FichasTablero = List[List[Ficha]]
 
   private val rng = scala.util.Random
+
+
+  // Para el constructor que genera un tablero aleatorio.
 
   /**
    * Genera una columna (una lista) de números aleatorios.
@@ -41,6 +46,149 @@ object Tablero {
   private def GenerarTableroAleatorio(numColumnasRestantes: Int, numElementosPorColumna: Int): FichasTablero = {
     if (numColumnasRestantes == 1) List(GenerarColumnaAleatoria(numElementosPorColumna))
     else GenerarColumnaAleatoria(numElementosPorColumna)::GenerarTableroAleatorio(numColumnasRestantes - 1, numElementosPorColumna)
+  }
+
+
+  // Para la manipulación del tablero.
+
+  /**
+   * Cuenta el número de elementos de la columna que son 0:
+   * es decir, el número de fichas vacías.
+   *
+   * @param columna Columna.
+   * @return Número de fichas vacías.
+   */
+  private def NumFichasVacias(columna: List[Ficha]): Int = {
+    columna.length match {
+      case 0 => 0
+      case _ =>
+        val extra = if (columna.head == 0) 1 else 0
+        extra + NumFichasVacias(columna.tail)
+    }
+  }
+
+  /**
+   * Desplaza las columnas de un tablero, hacia la izquierda si se quedan vacias y desplaza los elementos
+   * de las propias columnas hacia abajo
+   * @param data Los datos del tablero a desplazar
+   * @return Los datos nuevos o una lista vacia si todos los elemntos son 0
+   */
+  def EliminarColumnasVacias(data: List[List[Int]]): List[List[Int]] ={
+    if (data.isEmpty) return List()
+
+    NumFichasVacias(data.head) == data.head.length match {
+      case true => List()
+      case false => data.head :: EliminarColumnasVacias(data.tail)
+    }
+  }
+
+  /**
+   * Comprueba si una columna está vacía: es decir, si todas sus fichas son 0.
+   * @param list Columna
+   */
+  @tailrec
+  private def EsColumnaVacia(list: List[Ficha]): Boolean = {
+    list.length match {
+      case 0 => true
+      case _ =>
+        if (list.head == 0) EsColumnaVacia(list.tail)
+        else false
+    }
+  }
+
+  /**
+   * Desplaza las fichas de una columna: de tal manera que las fichas vacías quedan en
+   * la parte superior mientras que las fichas con valor quedan en la parte inferior.
+   *
+   * Su funcionamiento es el siguiente:
+   *
+   * - Primero contamos el número de fichas vacías que contiene la columna.
+   *
+   * - Después, generamos una lista con un número de 0 equivalente a la cantidad
+   * de fichas vacías de la columna original.
+   *
+   * - Por último, añadimos a esta lista de ceros todas las fichas no vacías (distintas de 0)
+   * de la columna original.
+   *
+   * De esta manera, nos aseguramos de que las fichas vacías estén al principio de la columna (en la parte superior).
+   *
+   * @param col Columna a desplazar.
+   * @return Nueva columna con las fichas desplazadas.
+   */
+  private def DesplazarColumna(col: List[Ficha]): List[Ficha] = {
+    val numCeros = NumFichasVacias(col)
+    val fichasSuperiores = Listas.GenerarLista(0, numCeros)
+
+    fichasSuperiores ::: FichasNoVacias(col)
+  }
+
+  /**
+   * Devuelve una lista en la que únicamente se encuentran las fichas no vacías de la columna dada.
+   * @param col Columna.
+   * @return Lista con las fichas no vacías de la columna.
+   */
+  private def FichasNoVacias(col: List[Ficha]): List[Ficha] = {
+    col.length match {
+      case 0 => List()
+      case _ =>
+        if (col.head == 0) FichasNoVacias(col.tail)
+        else col.head::FichasNoVacias(col.tail)
+    }
+  }
+
+  /**
+   * Devuelve el número de columnas vacías (es decir, que tienen todas sus fichas = 0) del tablero.
+   * @param columnas Tablero.
+   */
+  private def ContarColumnasVacias(columnas: List[List[Ficha]]): Int = {
+    columnas.length match {
+      case 0 => 0
+      case _ =>
+        if (EsColumnaVacia(columnas.head)) 1 + ContarColumnasVacias(columnas.tail)
+        else 0 + ContarColumnasVacias(columnas.tail)
+    }
+  }
+
+  /**
+   * Desplaza todas las columnas del tablero.
+   * @param tab Tablero.
+   * @return Tablero con todas las columnas desplazadas.
+   */
+  final def GenerarColumnasDespazadas(tab: List[List[Ficha]]): List[List[Ficha]] = {
+    tab.length match {
+      case 0 => List()
+      case _ => DesplazarColumna(tab.head)::GenerarColumnasDespazadas(tab.tail)
+    }
+  }
+
+  /**
+   * Genera un tablero completamente desplazado: todas las fichas de cada columna han sido desplazadas,
+   * y todas las columnas en sí han sido desplazadas, de manera que las columnas vacías queden a la derecha.
+   * Funciona muy similar a DesplazarColumna().
+   *
+   * @param data Tablero.
+   * @return Tablero desplazado
+   */
+  def TableroDesplazado(data: List[List[Ficha]]): List[List[Ficha]] = {
+    val tab = GenerarColumnasDespazadas(data)
+
+    val numColumnasVacias = ContarColumnasVacias(data)
+
+    ColumnasNoVacias(tab):::Listas.GenerarLista(Listas.GenerarLista(0, data.head.length), numColumnasVacias)
+  }
+
+  /**
+   * Devuelve todas las columnas no vacías del tablero.
+   * @param columnas Tablero.
+   * @return Lista con todas las columnas no vacías del tablero.
+   */
+  private def ColumnasNoVacias(columnas: List[List[Ficha]]): List[List[Ficha]] = {
+    columnas.length match {
+      case 0 => List()
+      case _ =>
+        if (EsColumnaVacia(columnas.head)) ColumnasNoVacias(columnas.tail)
+        else columnas.head::ColumnasNoVacias(columnas.tail)
+    }
   }
 
 }
@@ -74,18 +222,19 @@ class Tablero(data: List[List[Int]], puntuacion: Int, vidas: Int) {
   /** Número de columnas. */
   def GetWidht(): Int = data.length
   /** Número de filas. */
-  def GetHeight(): Int = data(0).length
+  def GetHeight(): Int = data.head.length
 
   /** Comprueba si las coordenadas están dentro del tablero. */
   def CoordenadaValida(posX: Int, posY: Int): Boolean = posX >= 0 && posX < GetWidht() && posY >= 0 && posY < GetHeight()
 
 
   /** Imprime una fila del tablero. */
+  @tailrec
   private def ImprimirFila(tablero: FichasTablero, fila: Int): Unit = {
-    if (tablero.length > 0) {
-      print(tablero.head(fila))
-      ImprimirFila(tablero.tail, fila)
-    }
+    if (tablero.isEmpty) return
+
+    print(tablero.head(fila))
+    ImprimirFila(tablero.tail, fila)
   }
 
   /**
@@ -93,9 +242,10 @@ class Tablero(data: List[List[Int]], puntuacion: Int, vidas: Int) {
    *
    * @param fila Fila a imprimir (empieza en 0 y va subiendo).
    */
-  private def ImprimirTablero(fila:Int): Unit ={
+  @tailrec
+  private def ImprimirTablero(fila: Int): Unit ={
     if (fila < 0) throw new Exception(s"Se ha intentado imprimir la fila {$fila} menor que 0.")
-    if (fila >= GetHeight()) throw new Exception(s"Se ha intentado imprimir la fila {$fila}, pero solo hay {$GetHeight()} filas.")
+    if (fila >= GetHeight()) throw new Exception(s"Se ha intentado imprimir la fila {$fila}, pero solo hay {$this->GetHeight()} filas.")
 
     ImprimirFila(data, fila)
     print("\n")
@@ -130,12 +280,11 @@ class Tablero(data: List[List[Int]], puntuacion: Int, vidas: Int) {
     if (!CoordenadaValida(posX, posY)) return 0
 
     tablero.GetElem(posX, posY) match {
-      case x if (x != 0) => {
+      case x if x != 0 =>
         val nuevoTab = tablero.SetElem(posX, posY, VALOR_FICHA_MARCADA)
 
         (1 + NumElementosContiguos(posX + 1, posY, ficha, nuevoTab) + NumElementosContiguos(posX - 1, posY, ficha, nuevoTab)
           + NumElementosContiguos(posX, posY + 1, ficha, nuevoTab) + NumElementosContiguos(posX, posY - 1, ficha, nuevoTab))
-      }
 
       case _ => 0
     }
@@ -167,11 +316,11 @@ class Tablero(data: List[List[Int]], puntuacion: Int, vidas: Int) {
     if (!CoordenadaValida(posX, posY)) return this
 
     GetElem(posX, posY) match {
-      case x if (x == fichaMarcada) => {
+      case x if x == fichaMarcada =>
         val nuevoTab = SetElem(posX, posY, VALOR_FICHA_MARCADA)
         nuevoTab.Marcar(posX + 1, posY, fichaMarcada).Marcar(posX - 1, posY, fichaMarcada)
           .Marcar(posX, posY + 1, fichaMarcada).Marcar(posX, posY - 1, fichaMarcada)
-      }
+
 
       case _ => this
     }
@@ -211,11 +360,6 @@ class Tablero(data: List[List[Int]], puntuacion: Int, vidas: Int) {
     CoordenadaValida(posX, posY) && SePuedeEliminar(GetElem(posX, posY))
   }
 
-  /** Comprueba si la ficha seleccionada se puede eliminar. */
-  def SePuedeEliminar(ficha: Ficha): Boolean = {
-    ficha > 0 && ficha <= 8
-  }
-
   /**
    * Devuelve la ficha en la posición dada.
    *
@@ -228,6 +372,11 @@ class Tablero(data: List[List[Int]], puntuacion: Int, vidas: Int) {
     if (!CoordenadaValida(x, y)) throw new Exception("Coordenada inválida.")
 
     data(x)(y)
+  }
+
+  /** Comprueba si la ficha seleccionada se puede eliminar. */
+  private def SePuedeEliminar(ficha: Ficha): Boolean = {
+    ficha > 0 && ficha <= 8
   }
 
   /**
@@ -247,79 +396,4 @@ class Tablero(data: List[List[Int]], puntuacion: Int, vidas: Int) {
     new Tablero(Listas.SetElem(x, Listas.SetElem(y, valor, data(x)), data), puntuacion=puntuacion, vidas = vidas)
   }
 
-  private def NumCeros(lista: List[Ficha]): Int = {
-    lista.length match {
-      case 0 => 0
-      case _ =>
-        val extra = if (lista.head == 0) 1 else 0
-        extra + NumCeros(lista.tail)
-    }
-  }
-
-  private def DesplazarColumna(col: List[Ficha]): List[Ficha] = {
-    Listas.GenerarLista(0, NumCeros(col)):::DesplazarColumna(col, 0)
-  }
-
-  private def DesplazarColumna(col: List[Ficha], pos: Int): List[Ficha] = {
-    if (pos == col.length) return List()
-    if (Listas.GetElem(col, pos) == 0) return DesplazarColumna(col, pos + 1)
-
-    Listas.GetElem(col, pos)::DesplazarColumna(col, pos + 1)
-  }
-
-  final def GenerarColumnasDespazadas(tab: List[List[Ficha]]): List[List[Ficha]] = {
-    tab.length match {
-      case 0 => List()
-      case _ => DesplazarColumna(tab.head)::GenerarColumnasDespazadas(tab.tail)
-    }
-  }
-
-  def TableroDesplazado(data: List[List[Ficha]]): List[List[Ficha]] = {
-    val tab = GenerarColumnasDespazadas(data)
-
-    val numColumnasVacias = ContarColumnasVacias(data)
-
-    ColumnasNoVacias(tab):::Listas.GenerarLista(Listas.GenerarLista(0, GetHeight()), numColumnasVacias)
-  }
-
-  private def ColumnasNoVacias(columnas: List[List[Ficha]]): List[List[Ficha]] = {
-    columnas.length match {
-      case 0 => List()
-      case _ =>
-        if (EsColumnaVacia(columnas.head)) ColumnasNoVacias(columnas.tail)
-        else columnas.head::ColumnasNoVacias(columnas.tail)
-    }
-  }
-
-  private def ContarColumnasVacias(columnas: List[List[Ficha]]): Int = {
-    columnas.length match {
-      case 0 => 0
-      case _ =>
-        if (EsColumnaVacia(columnas.head)) 1 + ContarColumnasVacias(columnas.tail)
-        else 0 + ContarColumnasVacias(columnas.tail)
-    }
-  }
-
-  private def EsColumnaVacia(list: List[Ficha]): Boolean = {
-    list.length match {
-      case 0 => true
-      case _ =>
-        if (list.head == 0) EsColumnaVacia(list.tail)
-        else false
-    }
-  }
-
-  /**
-   * Desplaza las columnas de un tablero, hacia la izquierda si se quedan vacias y desplaza los elementos de las propias columnas hacia abajo
-   * @param data Los datos del tablero a desplazar
-   * @return Los datos nuevos o una lista vacia si todos los elemntos son 0
-   */
-  def EliminarColumnasVacias(data: List[List[Int]]): List[List[Int]] ={
-    if (data.length == 0) return List()
-
-    NumCeros(data.head) == GetHeight() match {
-      case true => List()
-      case false => data.head :: EliminarColumnasVacias(data.tail)
-    }
-  }
 }

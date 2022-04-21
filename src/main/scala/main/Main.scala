@@ -1,7 +1,7 @@
 package main
 
 object Main {
-  def main(args: Array[String]) = {
+  def main(args: Array[String]): Unit = {
 
     val tabOriginal = List(
       List(1, 1, 1, 1, 1),
