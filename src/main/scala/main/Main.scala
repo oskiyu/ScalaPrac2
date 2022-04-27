@@ -20,7 +20,6 @@ object Main {
   }
 
   def PedirPieza(tablero: Tablero): (Int, Int) = {
-    println("Coordenadas inválidas")
 
     val tempx = StdIn.readLine()
     val tempy = StdIn.readLine()
@@ -28,9 +27,12 @@ object Main {
     try {
       val x = tempx.toInt
       val y = tempy.toInt
-
-      if (!tablero.CoordenadaValida(x, y) || !tablero.SePuedeEliminar(x, y))
+      if (!tablero.CoordenadaValida(x,y)){
+        println("Coordenadas Inválidas")
+      }
+      if (!tablero.CoordenadaValida(x, y) || !tablero.SePuedeEliminar(x, y)) {
         return PedirPieza(tablero)
+      }
 
       return (x, y)
     }

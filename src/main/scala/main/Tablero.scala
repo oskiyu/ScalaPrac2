@@ -233,7 +233,8 @@ class Tablero(data: List[List[Int]], puntuacion: Int, vidas: Int) {
   private def ImprimirFila(tablero: FichasTablero, fila: Int): Unit = {
     if (tablero.isEmpty) return
 
-    print(tablero.head(fila))
+    print(tablero.head(fila) + "   ")
+
     ImprimirFila(tablero.tail, fila)
   }
 
@@ -316,16 +317,48 @@ class Tablero(data: List[List[Int]], puntuacion: Int, vidas: Int) {
     if (!CoordenadaValida(posX, posY)) return this
 
     GetElem(posX, posY) match {
-      case x if x == fichaMarcada =>
+      case x if x == VALOR_FICHA_BOMBA =>
+        MarcadoBomba(posX,posY)
+
+      case y if y == fichaMarcada =>
         val nuevoTab = SetElem(posX, posY, VALOR_FICHA_MARCADA)
         nuevoTab.Marcar(posX + 1, posY, fichaMarcada).Marcar(posX - 1, posY, fichaMarcada)
           .Marcar(posX, posY + 1, fichaMarcada).Marcar(posX, posY - 1, fichaMarcada)
-
 
       case _ => this
     }
   }
 
+  /**
+   * Realiza el efecto de marcado de una bomba, poniendo al valor de la ficha marcada los elementos contiguos a la ficha, devolviendo un tablero
+   * con los elementos marcados a 0
+   * @param posX Coordenada X de la bomba
+   * @param posY Coordenada Y de la bomba
+   * @return Tablero tras explosión de bomba
+   */
+  def MarcadoBomba(posX:Int,posY:Int):Tablero = {
+    val nuevoTab = SetElem(posX,posY,VALOR_FICHA_MARCADA).SetElemBomba(posX -1 ,posY,VALOR_FICHA_MARCADA).SetElemBomba(posX ,posY -1 ,VALOR_FICHA_MARCADA).SetElemBomba(posX +1,posY,VALOR_FICHA_MARCADA).SetElemBomba(posX ,posY +1 ,VALOR_FICHA_MARCADA).SetElemBomba(posX +1 ,posY +1 ,VALOR_FICHA_MARCADA).SetElemBomba(posX -1,posY -1 ,VALOR_FICHA_MARCADA).SetElemBomba(posX +1 ,posY -1 ,VALOR_FICHA_MARCADA).SetElemBomba(posX -1,posY +1 ,VALOR_FICHA_MARCADA)
+    nuevoTab
+  }
+
+  /**
+   * Devuelve un tablero en el que se ha sustituido una ficha por 0, a menos que sea una bomba, en cuyo caso se propaga la explosion invocando
+   * al método MarcadoBomba para esa posición
+   * @param x Coordenada X del elemento parte de la explosión
+   * @param y Coordenada Y del elemento parte de la explosión
+   * @param valor Nueva Ficha
+   * @return Tablero tras la sustitución
+   */
+  def SetElemBomba(x: Int, y: Int, valor: Ficha): Tablero = {
+    if (!CoordenadaValida(x, y)) return this
+    GetElem(x,y) match{
+      case VALOR_FICHA_BOMBA =>
+        MarcadoBomba(x,y)
+      case _ =>
+        new Tablero(Listas.SetElem(x, Listas.SetElem(y, valor, data(x)), data), puntuacion=puntuacion, vidas = vidas)
+    }
+
+  }
   /**
    * Se eliminan las piezas correspondientes cuando el jugador toca en la pieza indicada.
    * Devuelve un nuevo tablero con las fichas ya eliminadas.
