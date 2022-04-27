@@ -1,20 +1,44 @@
 package main
 
+import scala.io.StdIn
+
 object Main {
   def main(args: Array[String]): Unit = {
-
-    val tabOriginal = List(
-      List(1, 1, 1, 1, 1),
-      List(1, 1, 1, 1, 1),
-      List(1, 1, 2, 1, 1),
-      List(1, 1, 0, 1, 1),
-      List(1, 1, 0, 3, 1)
-    )
-
-    val tab = new Tablero(tabOriginal, 1, 1);
-    val newTab = tab.Eliminar(1, 1)
-    tab.Imprimir()
-    println("--------")
-    newTab.Imprimir()
+    Jugar(new Tablero(5, 5, 3))
   }
+
+  def Jugar(tablero: Tablero): Unit = {
+    println(s"Puntuación: ${tablero.GetPuntuacion()}")
+    println(s"Vidas: ${tablero.GetNumVidas()}")
+    tablero.Imprimir()
+
+    println("Elige la pieza")
+
+    val coordenadas = PedirPieza(tablero)
+
+    Jugar(tablero.Eliminar(coordenadas._1, coordenadas._2))
+  }
+
+  def PedirPieza(tablero: Tablero): (Int, Int) = {
+    println("Coordenadas inválidas")
+
+    val tempx = StdIn.readLine()
+    val tempy = StdIn.readLine()
+
+    try {
+      val x = tempx.toInt
+      val y = tempy.toInt
+
+      if (!tablero.CoordenadaValida(x, y) || !tablero.SePuedeEliminar(x, y))
+        return PedirPieza(tablero)
+
+      return (x, y)
+    }
+    catch {
+      case e: Exception =>
+        println ("Fuck you")
+        PedirPieza (tablero)
+    }
+  }
+
 }

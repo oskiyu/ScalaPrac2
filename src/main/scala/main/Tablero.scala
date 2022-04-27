@@ -396,4 +396,7 @@ class Tablero(data: List[List[Int]], puntuacion: Int, vidas: Int) {
     new Tablero(Listas.SetElem(x, Listas.SetElem(y, valor, data(x)), data), puntuacion=puntuacion, vidas = vidas)
   }
 
+  def GetPuntuacion() = puntuacion
+  def GetNumVidas() = vidas
+
 }
