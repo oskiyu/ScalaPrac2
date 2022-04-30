@@ -281,7 +281,7 @@ class Tablero(data: List[List[Int]], puntuacion: Int, vidas: Int) {
     if (!CoordenadaValida(posX, posY)) return 0
 
     tablero.GetElem(posX, posY) match {
-      case x if tablero.GetElem(posX, posY) != 0 && tablero.GetElem(posX, posY) == ficha =>
+      case x if x == ficha =>
         val nuevoTab = tablero.SetElem(posX, posY, VALOR_FICHA_MARCADA)
 
         (1 + NumElementosContiguos(posX + 1, posY, ficha, nuevoTab) + NumElementosContiguos(posX - 1, posY, ficha, nuevoTab)
@@ -293,12 +293,12 @@ class Tablero(data: List[List[Int]], puntuacion: Int, vidas: Int) {
 
   /**
    * Comprueba si se puede marcar la ficha seleccionada.
+   * Se puede marcar si hay al menos 3 fichas del mismo tipo juntas.
    *
    * @note Las coordenadas deben ser válidas.
    *
    * @param posX Columna en la que se encunetra la ficha.
    * @param posY Fila en la que se encuentra la ficha.
-   * @return Número de fichas del mismo tipo contiguas (sin contar diagonales).
    */
   def SePuedeMarcar(posX: Int, posY: Int): Boolean = {
     NumElementosContiguos(posX, posY, GetElem(posX, posY), this) >= NUM_FICHAS_CONTIGUAS
@@ -313,15 +313,15 @@ class Tablero(data: List[List[Int]], puntuacion: Int, vidas: Int) {
    * @param fichaMarcada Ficha que queremos marcar.
    * @return main.Tablero con todas las fichas marcadas.
    */
-  private def Marcar(posX: Int, posY: Int, fichaMarcada: Ficha,nMarcadas:Int): Tablero = {
+  private def Marcar(posX: Int, posY: Int, fichaMarcada: Ficha): Tablero = {
     if (!CoordenadaValida(posX, posY)) return this
 
     GetElem(posX, posY) match {
       case x if x == fichaMarcada =>
-        val nMarcadasNuevo = nMarcadas + 10
         val nuevoTab = SetElem(posX, posY, VALOR_FICHA_MARCADA)
-        nuevoTab.Marcar(posX + 1, posY, fichaMarcada,nMarcadasNuevo).Marcar(posX - 1, posY, fichaMarcada,nMarcadasNuevo)
-          .Marcar(posX, posY + 1, fichaMarcada,nMarcadasNuevo).Marcar(posX, posY - 1, fichaMarcada,nMarcadasNuevo)
+
+        nuevoTab.Marcar(posX + 1, posY, fichaMarcada).Marcar(posX - 1, posY, fichaMarcada)
+          .Marcar(posX, posY + 1, fichaMarcada).Marcar(posX, posY - 1, fichaMarcada)
 
       case _ => this
     }
@@ -335,13 +335,16 @@ class Tablero(data: List[List[Int]], puntuacion: Int, vidas: Int) {
    * @return Tablero tras explosión de bomba
    */
   def MarcadoBomba(posX:Int,posY:Int):Tablero = {
-    val nuevoTab = SetElem(posX,posY,VALOR_FICHA_MARCADA).SetElemBomba(posX -1 ,posY,VALOR_FICHA_MARCADA).SetElemBomba(posX ,posY -1 ,VALOR_FICHA_MARCADA).SetElemBomba(posX +1,posY,VALOR_FICHA_MARCADA).SetElemBomba(posX ,posY +1 ,VALOR_FICHA_MARCADA).SetElemBomba(posX +1 ,posY +1 ,VALOR_FICHA_MARCADA).SetElemBomba(posX -1,posY -1 ,VALOR_FICHA_MARCADA).SetElemBomba(posX +1 ,posY -1 ,VALOR_FICHA_MARCADA).SetElemBomba(posX -1,posY +1 ,VALOR_FICHA_MARCADA)
-    nuevoTab
+    SetElem(posX, posY, VALOR_FICHA_MARCADA).SetElemBomba(posX -1 , posY, VALOR_FICHA_MARCADA)
+      .SetElemBomba(posX, posY - 1, VALOR_FICHA_MARCADA).SetElemBomba(posX + 1, posY, VALOR_FICHA_MARCADA)
+      .SetElemBomba(posX, posY + 1, VALOR_FICHA_MARCADA).SetElemBomba(posX + 1, posY + 1, VALOR_FICHA_MARCADA)
+      .SetElemBomba(posX - 1, posY - 1, VALOR_FICHA_MARCADA).SetElemBomba(posX + 1, posY - 1, VALOR_FICHA_MARCADA)
+      .SetElemBomba(posX - 1, posY + 1, VALOR_FICHA_MARCADA)
   }
 
   /**
    * Devuelve un tablero en el que se ha sustituido una ficha por 0, a menos que sea una bomba, en cuyo caso se propaga la explosion invocando
-   * al método MarcadoBomba para esa posición
+   * al método MarcadoBomba para esa posición.
    * @param x Coordenada X del elemento parte de la explosión
    * @param y Coordenada Y del elemento parte de la explosión
    * @param valor Nueva Ficha
@@ -372,23 +375,27 @@ class Tablero(data: List[List[Int]], puntuacion: Int, vidas: Int) {
 
     SePuedeMarcar(posX, posY) match {
       case true =>
-        if (GetElem(posX,posY) != VALOR_FICHA_BOMBA ){
-          val tableroMarcado = Marcar(posX, posY, GetElem(posX, posY),puntuacion).GetData()
-          val tableroConFichasDesplazadas = TableroDesplazado(tableroMarcado)
-          new Tablero(tableroConFichasDesplazadas, vidas=vidas, puntuacion=puntuacion)
-        }else {
+        val tableroMarcado = Marcar(posX, posY, GetElem(posX, posY)).GetData()
+        val tableroConFichasDesplazadas = TableroDesplazado(tableroMarcado)
+        val numFichasMarcadas = NumElementosContiguos(posX, posY, GetElem(posX, posY), this)
+
+        val nuevaPuntuacion = numFichasMarcadas * 10
+
+        new Tablero(tableroConFichasDesplazadas, vidas=vidas, puntuacion= GetPuntuacion() + nuevaPuntuacion)
+
+      case false =>
+        if (GetElem(posX, posY) == VALOR_FICHA_BOMBA){
           val tableroMarcado = MarcadoBomba(posX,posY).GetData()
           val tableroConFichasDesplazadas = TableroDesplazado(tableroMarcado)
 
           new Tablero(tableroConFichasDesplazadas, vidas=vidas, puntuacion=puntuacion)
         }
+        else {
+          val tableroMarcado = SetElem(posX, posY, VALOR_FICHA_VACIA).GetData()
+          val tableroConFichasDesplazadas = TableroDesplazado(tableroMarcado)
 
-
-      case false =>
-        val tableroMarcado = SetElem(posX, posY, VALOR_FICHA_VACIA).GetData()
-        val tableroConFichasDesplazadas = TableroDesplazado(tableroMarcado)
-
-        new Tablero(tableroConFichasDesplazadas, vidas=vidas - 1, puntuacion=puntuacion)
+          new Tablero(tableroConFichasDesplazadas, vidas = vidas - 1, puntuacion = puntuacion)
+        }
     }
 
   }
@@ -434,7 +441,7 @@ class Tablero(data: List[List[Int]], puntuacion: Int, vidas: Int) {
     new Tablero(Listas.SetElem(x, Listas.SetElem(y, valor, data(x)), data), puntuacion=puntuacion, vidas = vidas)
   }
 
-  def GetPuntuacion() = puntuacion
-  def GetNumVidas() = vidas
+  def GetPuntuacion(): Int = puntuacion
+  def GetNumVidas(): Int = vidas
 
 }

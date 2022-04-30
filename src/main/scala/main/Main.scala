@@ -4,7 +4,7 @@ import scala.io.StdIn
 
 object Main {
   def main(args: Array[String]): Unit = {
-    Jugar(new Tablero(5, 5, 3))
+    Jugar(new Tablero(6, 6, 3))
   }
 
   def Jugar(tablero: Tablero): Unit = {
