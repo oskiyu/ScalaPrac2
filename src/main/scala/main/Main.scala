@@ -3,6 +3,7 @@ package main
 import scala.io.StdIn
 
 object Main {
+
   def main(args: Array[String]): Unit = {
     Jugar(new Tablero(6, 6, 3))
   }
@@ -11,6 +12,10 @@ object Main {
     println(s"Puntuación: ${tablero.GetPuntuacion()}")
     println(s"Vidas: ${tablero.GetNumVidas()}")
     tablero.Imprimir()
+
+    val mejorJugada = IA.GetJugada(tablero)
+    val puntos = tablero.Eliminar(mejorJugada._1, mejorJugada._2).GetPuntuacion()
+    println(s"Mejor jugada: ${mejorJugada._1}, ${mejorJugada._2}, puntuacion: ${puntos}")
 
     println("Elige la pieza")
 
