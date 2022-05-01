@@ -1,5 +1,6 @@
 package main
 
+import scala.annotation.tailrec
 import scala.io.StdIn
 
 object Main {
@@ -8,23 +9,32 @@ object Main {
     InicializarJuego()
   }
 
+  @tailrec
   def Jugar(tablero: Tablero): Unit = {
-    if (tablero.isVacio){
+    if (tablero.IsEmpty()){
       println("¡Enhorabuena ganaste!")
       println(s"Puntuación final: ${tablero.GetPuntuacion()}")
+
       System.exit(0)
     }
+
     if (tablero.GetNumVidas() == 0) {
       println("Te quedaste sin vidas")
       println(s"Puntuación final: ${tablero.GetPuntuacion()}")
+
       System.exit(0)
     }
+
     println(s"Puntuación: ${tablero.GetPuntuacion()}")
     println(s"Vidas: ${tablero.GetNumVidas()}")
+
     tablero.Imprimir()
+
     val mejorJugada = IA.GetJugada(tablero)
-    val puntos = tablero.Eliminar(mejorJugada._1, mejorJugada._2).GetPuntuacion()
-    println(s"Mejor jugada: ${mejorJugada._1}, ${mejorJugada._2}, puntuacion: ${puntos}")
+    val puntos = mejorJugada._3
+
+    if (puntos >= 0) println(s"Mejor jugada: ${mejorJugada._1}, ${mejorJugada._2}, puntuacion: $puntos")
+    else println("El algoritmo no fue capaz de encontrar una jugada válida.")
 
     println("Elige la pieza")
 
@@ -32,24 +42,30 @@ object Main {
 
     Jugar(tablero.Eliminar(coordenadas._1, coordenadas._2))
   }
+
   def InicializarJuego() : Unit = {
+    PedirDificultad() match {
+      case 1 => Jugar(new Tablero(9, 11, 8, 2, 2))
+      case 2 => Jugar(new Tablero(12, 16, 10, 5, 3))
+      case 3 => Jugar(new Tablero(25, 15, 15, 7, 5))
+    }
+  }
+
+  @tailrec
+  def PedirDificultad(): Int = {
     println("Elige una dificultad")
-    val tempx = StdIn.readLine()
+
     try {
-      val x = tempx.toInt
-      x match {
-        case 1 => Jugar(new Tablero(9, 11, 8,2,2))
-        case 2 => Jugar(new Tablero(12, 16, 10,5,3))
-        case 3 => Jugar(new Tablero(25, 15, 15,7,5))
-      }
+      StdIn.readLine().toInt
     }
     catch {
       case e: Exception =>
-        e.printStackTrace()
-        println ("Dificultad erronea")
-        InicializarJuego()
+        println("Dificultad erronea")
+        PedirDificultad()
     }
   }
+
+
   def PedirPieza(tablero: Tablero): (Int, Int) = {
 
     val tempx = StdIn.readLine()
@@ -65,7 +81,7 @@ object Main {
         return PedirPieza(tablero)
       }
 
-      return (x, y)
+      (x, y)
     }
     catch {
       case e: Exception =>

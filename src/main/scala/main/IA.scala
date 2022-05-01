@@ -5,15 +5,15 @@ object IA {
   private val rng = scala.util.Random
 
   /** Calcula la mejor jugada posible usando un algoritmo de
-   * Monte Carlo con 5 intentos aleatorios.
+   * Monte Carlo con 10 intentos aleatorios.
    *
    * @param tablero Tablero sobre el que se va a calcular la jugada.
    * @return (posX, posY): posición de la ficha con la mejor jugada de entre las intentadas.
    */
-  def GetJugada(tablero: Tablero): (Int, Int) = {
+  def GetJugada(tablero: Tablero): (Int, Int, Int) = {
     val jugada = GetJugada(tablero, 10)
 
-    (jugada._1, jugada._2)
+    (jugada._1, jugada._2, jugada._3)
   }
 
   /**
@@ -31,8 +31,9 @@ object IA {
   private def GetJugada(tablero: Tablero, numRestantes: Int): (Int, Int, Int) = {
     if (numRestantes == 0) return (0, 0, -1)
 
-    val x = rng.nextInt(tablero.GetWidht())
-    val y = rng.nextInt(tablero.GetHeight())
+    // Únicamente escoge posiciones que tengan fichas.
+    val x = rng.nextInt(tablero.GetNumColumnasNoVacias())
+    val y = tablero.GetHeight() - rng.nextInt(tablero.GetHeight(x))
 
     val puntuacion = if (tablero.SePuedeEliminar(x, y)) tablero.Eliminar(x, y).GetPuntuacion()
                      else -1

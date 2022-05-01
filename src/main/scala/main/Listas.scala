@@ -64,4 +64,26 @@ object Listas {
     }
   }
 
+  /**
+   * Devuelve la posición en la lista del primer elemento que cumpla la condición dada.
+   *
+   * @param func Condición que debe cumplir el elemento.
+   * @param list Lista.
+   * @return -1 si no hay ningún elemento que cumpla los requisitos.
+   */
+  final def FindIndex[T](func: T => Boolean, list: List[T]): Int = {
+    if (list.isEmpty) return -1
+
+    if (func(list.head)) 0
+    else 1 + FindIndex(func, list.tail)
+  }
+
+  /** Cuenta el número de elementos de la lista que cumplen la condición dada. */
+  final def Count[T](func: T => Boolean, list: List[T]): Int = {
+    if (list.isEmpty) return 0
+
+    if (func(list.head)) 1 + Count(func, list.tail)
+    else Count(func, list.tail)
+  }
+
 }

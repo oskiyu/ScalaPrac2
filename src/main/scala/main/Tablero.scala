@@ -26,12 +26,13 @@ object Tablero {
    * ambos incluidos.
    *
    * @param numElemRestantes Número de elementos añadidos a la lista.
-   * @param numLimite Número de colores a introducir
+   * @param numColores Número de colores a introducir
+   *
    * @return Lista aleatoria.
    */
-  private def GenerarColumnaAleatoria(numElemRestantes: Int,numLimite:Int): List[Ficha] = {
+  private def GenerarColumnaAleatoria(numElemRestantes: Int, numColores: Int): List[Ficha] = {
     if (numElemRestantes == 0) List()
-    else (rng.nextInt(numLimite) + 1)::GenerarColumnaAleatoria(numElemRestantes - 1,numLimite)
+    else (rng.nextInt(numColores) + 1)::GenerarColumnaAleatoria(numElemRestantes - 1, numColores)
   }
 
   /**
@@ -42,17 +43,22 @@ object Tablero {
    * @param data Datos del tablero
    * @return El tablero con nBombas
    */
-  def GenerarBombas(width:Int,height:Int,nBombas: Int,data:List[List[Int]]): List[List[Int]] = {
+  @tailrec
+  def GenerarBombas(width: Int, height: Int, nBombas: Int, data: List[List[Int]]): List[List[Int]] = {
     nBombas match {
       case 0 =>
         data
+
       case 1 =>
         val x = rng.nextInt(width)
         val y = rng.nextInt(height)
+
         Listas.SetElem(x, Listas.SetElem(y, 8, data(x)), data)
+
       case _ =>
         val x = rng.nextInt(width)
         val y = rng.nextInt(height)
+
         GenerarBombas(width,height,nBombas - 1, Listas.SetElem(x, Listas.SetElem(y, 8, data(x)), data))
     }
 
@@ -66,12 +72,13 @@ object Tablero {
    * @see GenerarColumnaAleatoria
    * @param numColumnasRestantes Número de columnas (tamaño en X).
    * @param numElementosPorColumna Número de filas (tamaño en Y).
-   * @param numLimite numero de colores del tablero.
+   * @param numColores numero de colores del tablero.
+   *
    * @return Fichas aleatorias del tablero.
    */
-  private def GenerarTableroAleatorio(numColumnasRestantes: Int, numElementosPorColumna: Int,numLimite: Int): FichasTablero = {
-    if (numColumnasRestantes == 1) List(GenerarColumnaAleatoria(numElementosPorColumna,numLimite:Int ))
-    else GenerarColumnaAleatoria(numElementosPorColumna,numLimite)::GenerarTableroAleatorio(numColumnasRestantes - 1, numElementosPorColumna,numLimite)
+  private def GenerarTableroAleatorio(numColumnasRestantes: Int, numElementosPorColumna: Int, numColores: Int): FichasTablero = {
+    if (numColumnasRestantes == 1) List(GenerarColumnaAleatoria(numElementosPorColumna, numColores))
+    else GenerarColumnaAleatoria(numElementosPorColumna, numColores)::GenerarTableroAleatorio(numColumnasRestantes - 1, numElementosPorColumna, numColores)
   }
 
 
@@ -254,6 +261,10 @@ class Tablero(data: List[List[Int]], puntuacion: Int, vidas: Int) {
   /** Número de filas. */
   def GetHeight(): Int = data.head.length
 
+  /** Número de colúmnas con al menos una ficha. */
+  def GetNumColumnasNoVacias(): Int = GetWidht() - Tablero.ContarColumnasVacias(GetData())
+  /** Devuelve el número de fichas no vacías de una columna. */
+  def GetHeight(posX: Int): Int = Listas.Count[Int](x => x > 0, data(posX))
   /** Comprueba si las coordenadas están dentro del tablero. */
   def CoordenadaValida(posX: Int, posY: Int): Boolean = posX >= 0 && posX < GetWidht() && posY >= 0 && posY < GetHeight()
 
@@ -289,7 +300,7 @@ class Tablero(data: List[List[Int]], puntuacion: Int, vidas: Int) {
    * Devuelve verdadero si todas las columnas del tablero están vacias
    * @return true si el tablero esta vacio, false si no lo está
    */
-  def isVacio: Boolean = {
+  def IsEmpty(): Boolean = {
       ContarColumnasVacias(data)== this.GetWidht()
   }
   /** Imprime el tablero. */
@@ -389,6 +400,7 @@ class Tablero(data: List[List[Int]], puntuacion: Int, vidas: Int) {
    */
   def SetElemBomba(x: Int, y: Int, valor: Ficha): Tablero = {
     if (!CoordenadaValida(x, y)) return this
+
     GetElem(x,y) match{
       case VALOR_FICHA_BOMBA =>
         MarcadoBomba(x,y)
@@ -408,7 +420,7 @@ class Tablero(data: List[List[Int]], puntuacion: Int, vidas: Int) {
    * @return Nuevo tablero con las fichas eliminadas.
    */
   def Eliminar(posX: Int, posY: Int): Tablero = {
-    if (!SePuedeEliminar(posX, posY)) throw new Exception("No se puede eliminar la ficha seleccionada.")
+    if (!SePuedeEliminar(posX, posY)) throw new Exception(s"No se puede eliminar la ficha seleccionada. {$posX, $posY}")
 
     SePuedeMarcar(posX, posY) match {
       case true =>
@@ -425,7 +437,7 @@ class Tablero(data: List[List[Int]], puntuacion: Int, vidas: Int) {
           val tableroMarcado = MarcadoBomba(posX,posY).GetData()
           val tableroConFichasDesplazadas = TableroDesplazado(tableroMarcado)
 
-          new Tablero(tableroConFichasDesplazadas, vidas=vidas, puntuacion=puntuacion)
+          new Tablero(tableroConFichasDesplazadas, vidas=vidas, puntuacion=puntuacion + 90)
         }
         else {
           val tableroMarcado = SetElem(posX, posY, VALOR_FICHA_VACIA).GetData()
