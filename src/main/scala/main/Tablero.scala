@@ -28,9 +28,24 @@ object Tablero {
    * @param numElemRestantes Número de elementos añadidos a la lista.
    * @return Lista aleatoria.
    */
-  private def GenerarColumnaAleatoria(numElemRestantes: Int): List[Ficha] = {
+  private def GenerarColumnaAleatoria(numElemRestantes: Int,numLimite:Int): List[Ficha] = {
     if (numElemRestantes == 0) List()
-    else (rng.nextInt(8) + 1)::GenerarColumnaAleatoria(numElemRestantes - 1)
+    else (rng.nextInt(numLimite) + 1)::GenerarColumnaAleatoria(numElemRestantes - 1,numLimite)
+  }
+
+
+  def GenerarBombas(width:Int,height:Int,nBombas: Int,data:List[List[Int]]): List[List[Int]] = {
+    nBombas match {
+      case 1 =>
+        val x = rng.nextInt(width)
+        val y = rng.nextInt(height)
+        Listas.SetElem(x, Listas.SetElem(y, 8, data(x)), data)
+      case _ =>
+        val x = rng.nextInt(width)
+        val y = rng.nextInt(height)
+        GenerarBombas(width,height,nBombas - 1, Listas.SetElem(x, Listas.SetElem(y, 8, data(x)), data))
+    }
+
   }
 
   /**
@@ -43,9 +58,9 @@ object Tablero {
    * @param numElementosPorColumna Número de filas (tamaño en Y).
    * @return Fichas aleatorias del tablero.
    */
-  private def GenerarTableroAleatorio(numColumnasRestantes: Int, numElementosPorColumna: Int): FichasTablero = {
-    if (numColumnasRestantes == 1) List(GenerarColumnaAleatoria(numElementosPorColumna))
-    else GenerarColumnaAleatoria(numElementosPorColumna)::GenerarTableroAleatorio(numColumnasRestantes - 1, numElementosPorColumna)
+  private def GenerarTableroAleatorio(numColumnasRestantes: Int, numElementosPorColumna: Int,numLimite: Int): FichasTablero = {
+    if (numColumnasRestantes == 1) List(GenerarColumnaAleatoria(numElementosPorColumna,numLimite:Int ))
+    else GenerarColumnaAleatoria(numElementosPorColumna,numLimite)::GenerarTableroAleatorio(numColumnasRestantes - 1, numElementosPorColumna,numLimite)
   }
 
 
@@ -213,8 +228,9 @@ class Tablero(data: List[List[Int]], puntuacion: Int, vidas: Int) {
    * @param width Número de columnas.
    * @param height Número de filas.
    */
-  def this(width: Int, height: Int, vidas: Int) = {
-    this(Tablero.GenerarTableroAleatorio(width, height), puntuacion = 0, vidas = vidas)
+  def this(width: Int, height: Int, vidas: Int,nColores:Int,nBombas:Int) = {
+    this(Tablero.GenerarBombas(width,height,nBombas,Tablero.GenerarTableroAleatorio(width, height,nColores)), puntuacion = 0, vidas = vidas)
+
   }
 
   private def GetData() = data
@@ -356,7 +372,7 @@ class Tablero(data: List[List[Int]], puntuacion: Int, vidas: Int) {
       case VALOR_FICHA_BOMBA =>
         MarcadoBomba(x,y)
       case _ =>
-        new Tablero(Listas.SetElem(x, Listas.SetElem(y, valor, data(x)), data), puntuacion=puntuacion, vidas = vidas)
+        new Tablero(Listas.SetElem(x, Listas.SetElem(y, valor, data(x)), data), puntuacion = puntuacion , vidas = vidas)
     }
 
   }
