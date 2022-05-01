@@ -22,10 +22,11 @@ object Tablero {
 
   /**
    * Genera una columna (una lista) de números aleatorios.
-   * Los números estarán dentro de los límites de las fichas (1 - 8),
+   * Los números estarán dentro de los límites de las fichas (1 - numLimite),
    * ambos incluidos.
    *
    * @param numElemRestantes Número de elementos añadidos a la lista.
+   * @param numLimite Número de colores a introducir
    * @return Lista aleatoria.
    */
   private def GenerarColumnaAleatoria(numElemRestantes: Int,numLimite:Int): List[Ficha] = {
@@ -33,9 +34,18 @@ object Tablero {
     else (rng.nextInt(numLimite) + 1)::GenerarColumnaAleatoria(numElemRestantes - 1,numLimite)
   }
 
-
+  /**
+   * Genera tantas bombas en el tablero como indique el parámetro nBombas
+   * @param width Longitud del tablero
+   * @param height Altura del tablero
+   * @param nBombas Numero de bombas a introducir
+   * @param data Datos del tablero
+   * @return El tablero con nBombas
+   */
   def GenerarBombas(width:Int,height:Int,nBombas: Int,data:List[List[Int]]): List[List[Int]] = {
     nBombas match {
+      case 0 =>
+        data
       case 1 =>
         val x = rng.nextInt(width)
         val y = rng.nextInt(height)
@@ -50,12 +60,13 @@ object Tablero {
 
   /**
    * Genera un tablero con números aleatorios.
-   * Los números estarán dentro de los límites de las fichas (1 - 8),
+   * Los números estarán dentro de los límites de las fichas (1 - numLimite),
    * ambos incluidos.
    *
    * @see GenerarColumnaAleatoria
    * @param numColumnasRestantes Número de columnas (tamaño en X).
    * @param numElementosPorColumna Número de filas (tamaño en Y).
+   * @param numLimite numero de colores del tablero.
    * @return Fichas aleatorias del tablero.
    */
   private def GenerarTableroAleatorio(numColumnasRestantes: Int, numElementosPorColumna: Int,numLimite: Int): FichasTablero = {
@@ -223,10 +234,13 @@ class Tablero(data: List[List[Int]], puntuacion: Int, vidas: Int) {
   final val NUM_FICHAS_CONTIGUAS: Int = 3
 
   /**
-   * Crea un nuevo tablero con fichas aleatorias.
+   * Crea un nuevo tablero con fichas aleatorias con el numero de colores seleccionado y las bombas seleccionadas.
    *
    * @param width Número de columnas.
    * @param height Número de filas.
+   * @param vidas Número de vidas.
+   * @param nColores Número de colores.
+   * @param nBombas Número de bombas.
    */
   def this(width: Int, height: Int, vidas: Int,nColores:Int,nBombas:Int) = {
     this(Tablero.GenerarBombas(width,height,nBombas,Tablero.GenerarTableroAleatorio(width, height,nColores)), puntuacion = 0, vidas = vidas)
@@ -271,6 +285,13 @@ class Tablero(data: List[List[Int]], puntuacion: Int, vidas: Int) {
       ImprimirTablero(fila + 1)
   }
 
+  /**
+   * Devuelve verdadero si todas las columnas del tablero están vacias
+   * @return true si el tablero esta vacio, false si no lo está
+   */
+  def isVacio: Boolean = {
+      ContarColumnasVacias(data)== this.GetWidht()
+  }
   /** Imprime el tablero. */
   def Imprimir(): Unit = { ImprimirTablero(0) }
 
