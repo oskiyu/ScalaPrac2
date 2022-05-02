@@ -1,7 +1,7 @@
 package main
 
 import scala.annotation.tailrec
-
+import scala.collection.parallel.CollectionConverters._
 /**
  * Objeto estático con las funciones para crear un tablero aleatorio.
  * Ya que la función debe ejecutarse antes que el propio constructor, no podemos
@@ -254,7 +254,7 @@ class Tablero(data: List[List[Int]], puntuacion: Int, vidas: Int) {
 
   }
 
-  private def GetData() = data
+  private def GetData() = data.par
 
   /** Número de columnas. */
   def GetWidht(): Int = data.length
@@ -262,7 +262,7 @@ class Tablero(data: List[List[Int]], puntuacion: Int, vidas: Int) {
   def GetHeight(): Int = data.head.length
 
   /** Número de colúmnas con al menos una ficha. */
-  def GetNumColumnasNoVacias(): Int = GetWidht() - Tablero.ContarColumnasVacias(GetData())
+  def GetNumColumnasNoVacias(): Int = GetWidht() - Tablero.ContarColumnasVacias(GetData().toList)
   /** Devuelve el número de fichas no vacías de una columna. */
   def GetHeight(posX: Int): Int = Listas.Count[Int](x => x > 0, data(posX))
   /** Comprueba si las coordenadas están dentro del tablero. */
@@ -425,7 +425,7 @@ class Tablero(data: List[List[Int]], puntuacion: Int, vidas: Int) {
     SePuedeMarcar(posX, posY) match {
       case true =>
         val tableroMarcado = Marcar(posX, posY, GetElem(posX, posY)).GetData()
-        val tableroConFichasDesplazadas = TableroDesplazado(tableroMarcado)
+        val tableroConFichasDesplazadas = TableroDesplazado(tableroMarcado.toList)
         val numFichasMarcadas = NumElementosContiguos(posX, posY, GetElem(posX, posY), this)
 
         val nuevaPuntuacion = numFichasMarcadas * 10
@@ -435,13 +435,13 @@ class Tablero(data: List[List[Int]], puntuacion: Int, vidas: Int) {
       case false =>
         if (GetElem(posX, posY) == VALOR_FICHA_BOMBA){
           val tableroMarcado = MarcadoBomba(posX,posY).GetData()
-          val tableroConFichasDesplazadas = TableroDesplazado(tableroMarcado)
+          val tableroConFichasDesplazadas = TableroDesplazado(tableroMarcado.toList)
 
           new Tablero(tableroConFichasDesplazadas, vidas=vidas, puntuacion=puntuacion + 90)
         }
         else {
           val tableroMarcado = SetElem(posX, posY, VALOR_FICHA_VACIA).GetData()
-          val tableroConFichasDesplazadas = TableroDesplazado(tableroMarcado)
+          val tableroConFichasDesplazadas = TableroDesplazado(tableroMarcado.toList)
 
           new Tablero(tableroConFichasDesplazadas, vidas = vidas - 1, puntuacion = puntuacion)
         }
