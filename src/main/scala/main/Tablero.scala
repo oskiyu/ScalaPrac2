@@ -309,7 +309,7 @@ class Tablero(data: List[List[Int]], puntuacion: Int, vidas: Int) {
   /**
    * Cuenta el número de fichas contiguas del mismo tipo.
    * Es una función recursiva. Obtiene una copia del tablero original, y hace lko siguiente:
-   *    Si la ficha no coincide con la que buscamos, devuelve 0.
+   *    Si la ficha no coincide con la que buscamos, devuelve 0 y el tablero actual.
    *    Si la ficha sí es la que buscamos: sustituimos dicha ficha con un 0 en nuestro tablero local,
    *    y hacemos llamada recursiva con este nuevo tablero. De esta manera podemos hacer fácilmente la
    *    recursividad sin bucles infinitos, ya que las casillas previamente visitadas no volverán a ser contadas ya que
@@ -323,19 +323,21 @@ class Tablero(data: List[List[Int]], puntuacion: Int, vidas: Int) {
    * @param posY Fila de la ficha.
    * @param ficha Ficha que estamos contando.
    * @param tablero main.Tablero anterior.
-   * @return Número de fichas del mismo tipo.
+   * @return Número de fichas del mismo tipo y tablero resultante tras la cuenta.
    */
-  private def NumElementosContiguos(posX: Int, posY: Int, ficha: Ficha, tablero: Tablero): Int = {
-    if (!CoordenadaValida(posX, posY)) return 0
+  private def NumElementosContiguos(posX: Int, posY: Int, ficha: Ficha, tablero: Tablero): (Int,Tablero) = {
+    if (!CoordenadaValida(posX, posY)) return (0 , tablero)
 
     tablero.GetElem(posX, posY) match {
       case x if x == ficha =>
         val nuevoTab = tablero.SetElem(posX, posY, VALOR_FICHA_MARCADA)
+        val puntTab2 = NumElementosContiguos(posX + 1, posY, ficha, nuevoTab)
+        val puntTab3 = NumElementosContiguos(posX - 1, posY, ficha, puntTab2._2)
+        val puntTab4 = NumElementosContiguos(posX, posY +1, ficha, puntTab3._2)
+        val puntTab5 = NumElementosContiguos(posX, posY - 1, ficha, puntTab4._2)
+        (1 + puntTab2._1 + puntTab3._1 + puntTab4._1 + puntTab5._1,puntTab5._2)
 
-        (1 + NumElementosContiguos(posX + 1, posY, ficha, nuevoTab) + NumElementosContiguos(posX - 1, posY, ficha, nuevoTab)
-          + NumElementosContiguos(posX, posY + 1, ficha, nuevoTab) + NumElementosContiguos(posX, posY - 1, ficha, nuevoTab))
-
-      case _ => 0
+      case _ => (0 , tablero)
     }
   }
 
@@ -349,7 +351,7 @@ class Tablero(data: List[List[Int]], puntuacion: Int, vidas: Int) {
    * @param posY Fila en la que se encuentra la ficha.
    */
   def SePuedeMarcar(posX: Int, posY: Int): Boolean = {
-    NumElementosContiguos(posX, posY, GetElem(posX, posY), this) >= NUM_FICHAS_CONTIGUAS
+    NumElementosContiguos(posX, posY, GetElem(posX, posY), this)._1 >= NUM_FICHAS_CONTIGUAS
   }
 
   /**
@@ -425,8 +427,8 @@ class Tablero(data: List[List[Int]], puntuacion: Int, vidas: Int) {
     SePuedeMarcar(posX, posY) match {
       case true =>
         val tableroMarcado = Marcar(posX, posY, GetElem(posX, posY)).GetData()
-        val tableroConFichasDesplazadas = TableroDesplazado(tableroMarcado.toList)
-        val numFichasMarcadas = NumElementosContiguos(posX, posY, GetElem(posX, posY), this)
+        val tableroConFichasDesplazadas = TableroDesplazado(tableroMarcado)
+        val numFichasMarcadas = NumElementosContiguos(posX, posY, GetElem(posX, posY), this)._1
 
         val nuevaPuntuacion = numFichasMarcadas * 10
 
@@ -435,13 +437,13 @@ class Tablero(data: List[List[Int]], puntuacion: Int, vidas: Int) {
       case false =>
         if (GetElem(posX, posY) == VALOR_FICHA_BOMBA){
           val tableroMarcado = MarcadoBomba(posX,posY).GetData()
-          val tableroConFichasDesplazadas = TableroDesplazado(tableroMarcado.toList)
+          val tableroConFichasDesplazadas = TableroDesplazado(tableroMarcado)
 
           new Tablero(tableroConFichasDesplazadas, vidas=vidas, puntuacion=puntuacion + 90)
         }
         else {
           val tableroMarcado = SetElem(posX, posY, VALOR_FICHA_VACIA).GetData()
-          val tableroConFichasDesplazadas = TableroDesplazado(tableroMarcado.toList)
+          val tableroConFichasDesplazadas = TableroDesplazado(tableroMarcado)
 
           new Tablero(tableroConFichasDesplazadas, vidas = vidas - 1, puntuacion = puntuacion)
         }
