@@ -30,7 +30,7 @@ object Main {
 
     tablero.Imprimir()
 
-    val mejorJugada = IA.GetJugadaThreaded(tablero)
+    val mejorJugada = IA.GetJugadaParalela(tablero)
     val puntos = mejorJugada._3
 
     if (puntos >= 0) println(s"Mejor jugada: ${mejorJugada._1}, ${mejorJugada._2}, puntuacion: $puntos")

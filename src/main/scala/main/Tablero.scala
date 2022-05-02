@@ -336,6 +336,7 @@ class Tablero(data: ParSeq[ParSeq[Int]], puntuacion: Int, vidas: Int) {
         val puntTab3 = NumElementosContiguos(posX - 1, posY, ficha, puntTab2._2)
         val puntTab4 = NumElementosContiguos(posX, posY +1, ficha, puntTab3._2)
         val puntTab5 = NumElementosContiguos(posX, posY - 1, ficha, puntTab4._2)
+
         (1 + puntTab2._1 + puntTab3._1 + puntTab4._1 + puntTab5._1,puntTab5._2)
 
       case _ => (0 , tablero)
