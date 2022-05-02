@@ -254,7 +254,7 @@ class Tablero(data: List[List[Int]], puntuacion: Int, vidas: Int) {
 
   }
 
-  private def GetData() = data.par
+  private def GetData() = data
 
   /** Número de columnas. */
   def GetWidht(): Int = data.length
@@ -262,7 +262,7 @@ class Tablero(data: List[List[Int]], puntuacion: Int, vidas: Int) {
   def GetHeight(): Int = data.head.length
 
   /** Número de colúmnas con al menos una ficha. */
-  def GetNumColumnasNoVacias(): Int = GetWidht() - Tablero.ContarColumnasVacias(GetData().toList)
+  def GetNumColumnasNoVacias(): Int = GetWidht() - Tablero.ContarColumnasVacias(GetData())
   /** Devuelve el número de fichas no vacías de una columna. */
   def GetHeight(posX: Int): Int = Listas.Count[Int](x => x > 0, data(posX))
   /** Comprueba si las coordenadas están dentro del tablero. */
