@@ -2,6 +2,7 @@ package main
 
 import scala.annotation.tailrec
 import scala.collection.parallel.CollectionConverters._
+import scala.collection.parallel.ParSeq
 /**
  * Objeto estático con las funciones para crear un tablero aleatorio.
  * Ya que la función debe ejecutarse antes que el propio constructor, no podemos
@@ -13,7 +14,7 @@ object Tablero {
   type Ficha = Int
 
   /** El tablero es una lista de listas (lista de columnas). */
-  type FichasTablero = List[List[Ficha]]
+  type FichasTablero = ParSeq[ParSeq[Ficha]]
 
   private val rng = scala.util.Random
 
@@ -28,11 +29,11 @@ object Tablero {
    * @param numElemRestantes Número de elementos añadidos a la lista.
    * @param numColores Número de colores a introducir
    *
-   * @return Lista aleatoria.
+   * @return ParSeqa aleatoria.
    */
-  private def GenerarColumnaAleatoria(numElemRestantes: Int, numColores: Int): List[Ficha] = {
-    if (numElemRestantes == 0) List()
-    else (rng.nextInt(numColores) + 1)::GenerarColumnaAleatoria(numElemRestantes - 1, numColores)
+  private def GenerarColumnaAleatoria(numElemRestantes: Int, numColores: Int): ParSeq[Ficha] = {
+    if (numElemRestantes == 0) ParSeq()
+    else (((rng.nextInt(numColores) + 1)::GenerarColumnaAleatoria(numElemRestantes - 1, numColores).toList)).par
   }
 
   /**
@@ -44,7 +45,7 @@ object Tablero {
    * @return El tablero con nBombas
    */
   @tailrec
-  def GenerarBombas(width: Int, height: Int, nBombas: Int, data: List[List[Int]]): List[List[Int]] = {
+  def GenerarBombas(width: Int, height: Int, nBombas: Int, data: ParSeq[ParSeq[Int]]): ParSeq[ParSeq[Int]] = {
     nBombas match {
       case 0 =>
         data
@@ -77,8 +78,8 @@ object Tablero {
    * @return Fichas aleatorias del tablero.
    */
   private def GenerarTableroAleatorio(numColumnasRestantes: Int, numElementosPorColumna: Int, numColores: Int): FichasTablero = {
-    if (numColumnasRestantes == 1) List(GenerarColumnaAleatoria(numElementosPorColumna, numColores))
-    else GenerarColumnaAleatoria(numElementosPorColumna, numColores)::GenerarTableroAleatorio(numColumnasRestantes - 1, numElementosPorColumna, numColores)
+    if (numColumnasRestantes == 1) ParSeq(GenerarColumnaAleatoria(numElementosPorColumna, numColores))
+    else (GenerarColumnaAleatoria(numElementosPorColumna, numColores) ::GenerarTableroAleatorio(numColumnasRestantes - 1, numElementosPorColumna, numColores).toList).par
   }
 
 
@@ -91,7 +92,7 @@ object Tablero {
    * @param columna Columna.
    * @return Número de fichas vacías.
    */
-  private def NumFichasVacias(columna: List[Ficha]): Int = {
+  private def NumFichasVacias(columna: ParSeq[Ficha]): Int = {
     columna.length match {
       case 0 => 0
       case _ =>
@@ -106,12 +107,12 @@ object Tablero {
    * @param data Los datos del tablero a desplazar
    * @return Los datos nuevos o una lista vacia si todos los elemntos son 0
    */
-  def EliminarColumnasVacias(data: List[List[Int]]): List[List[Int]] ={
-    if (data.isEmpty) return List()
+  def EliminarColumnasVacias(data: ParSeq[ParSeq[Int]]): ParSeq[ParSeq[Int]] ={
+    if (data.isEmpty) return List().par
 
     NumFichasVacias(data.head) == data.head.length match {
-      case true => List()
-      case false => data.head :: EliminarColumnasVacias(data.tail)
+      case true => List().par
+      case false => (data.head :: EliminarColumnasVacias(data.tail).toList).par
     }
   }
 
@@ -120,7 +121,7 @@ object Tablero {
    * @param list Columna
    */
   @tailrec
-  private def EsColumnaVacia(list: List[Ficha]): Boolean = {
+  private def EsColumnaVacia(list: ParSeq[Ficha]): Boolean = {
     list.length match {
       case 0 => true
       case _ =>
@@ -148,24 +149,24 @@ object Tablero {
    * @param col Columna a desplazar.
    * @return Nueva columna con las fichas desplazadas.
    */
-  private def DesplazarColumna(col: List[Ficha]): List[Ficha] = {
+  private def DesplazarColumna(col: ParSeq[Ficha]): ParSeq[Ficha] = {
     val numCeros = NumFichasVacias(col)
-    val fichasSuperiores = Listas.GenerarLista(0, numCeros)
+    val fichasSuperiores = Listas.GenerarParSeqa(0, numCeros)
 
-    fichasSuperiores ::: FichasNoVacias(col)
+    (fichasSuperiores.toList ::: FichasNoVacias(col).toList).par
   }
 
   /**
    * Devuelve una lista en la que únicamente se encuentran las fichas no vacías de la columna dada.
    * @param col Columna.
-   * @return Lista con las fichas no vacías de la columna.
+   * @return ParSeqa con las fichas no vacías de la columna.
    */
-  private def FichasNoVacias(col: List[Ficha]): List[Ficha] = {
+  private def FichasNoVacias(col: ParSeq[Ficha]): ParSeq[Ficha] = {
     col.length match {
-      case 0 => List()
+      case 0 => ParSeq()
       case _ =>
         if (col.head == 0) FichasNoVacias(col.tail)
-        else col.head::FichasNoVacias(col.tail)
+        else (col.head ::FichasNoVacias(col.tail).toList).par
     }
   }
 
@@ -173,7 +174,7 @@ object Tablero {
    * Devuelve el número de columnas vacías (es decir, que tienen todas sus fichas = 0) del tablero.
    * @param columnas Tablero.
    */
-  private def ContarColumnasVacias(columnas: List[List[Ficha]]): Int = {
+  private def ContarColumnasVacias(columnas: ParSeq[ParSeq[Ficha]]): Int = {
     columnas.length match {
       case 0 => 0
       case _ =>
@@ -187,10 +188,10 @@ object Tablero {
    * @param tab Tablero.
    * @return Tablero con todas las columnas desplazadas.
    */
-  final def GenerarColumnasDespazadas(tab: List[List[Ficha]]): List[List[Ficha]] = {
+  final def GenerarColumnasDespazadas(tab: ParSeq[ParSeq[Ficha]]): ParSeq[ParSeq[Ficha]] = {
     tab.length match {
-      case 0 => List()
-      case _ => DesplazarColumna(tab.head)::GenerarColumnasDespazadas(tab.tail)
+      case 0 => ParSeq()
+      case _ => (DesplazarColumna(tab.head) :: GenerarColumnasDespazadas(tab.tail).toList).par
     }
   }
 
@@ -202,25 +203,25 @@ object Tablero {
    * @param data Tablero.
    * @return Tablero desplazado
    */
-  def TableroDesplazado(data: List[List[Ficha]]): List[List[Ficha]] = {
+  def TableroDesplazado(data: ParSeq[ParSeq[Ficha]]): ParSeq[ParSeq[Ficha]] = {
     val tab = GenerarColumnasDespazadas(data)
 
     val numColumnasVacias = ContarColumnasVacias(data)
 
-    ColumnasNoVacias(tab):::Listas.GenerarLista(Listas.GenerarLista(0, data.head.length), numColumnasVacias)
+    (ColumnasNoVacias(tab).toList :::Listas.GenerarParSeqa(Listas.GenerarParSeqa(0, data.head.length), numColumnasVacias).toList).par
   }
 
   /**
    * Devuelve todas las columnas no vacías del tablero.
    * @param columnas Tablero.
-   * @return Lista con todas las columnas no vacías del tablero.
+   * @return ParSeqa con todas las columnas no vacías del tablero.
    */
-  private def ColumnasNoVacias(columnas: List[List[Ficha]]): List[List[Ficha]] = {
+  private def ColumnasNoVacias(columnas: ParSeq[ParSeq[Ficha]]): ParSeq[ParSeq[Ficha]] = {
     columnas.length match {
-      case 0 => List()
+      case 0 => ParSeq()
       case _ =>
         if (EsColumnaVacia(columnas.head)) ColumnasNoVacias(columnas.tail)
-        else columnas.head::ColumnasNoVacias(columnas.tail)
+        else (columnas.head::ColumnasNoVacias(columnas.tail).toList).par
     }
   }
 
@@ -231,7 +232,7 @@ object Tablero {
  *
  * @param data Array de arrays con las fichas.
  */
-class Tablero(data: List[List[Int]], puntuacion: Int, vidas: Int) {
+class Tablero(data: ParSeq[ParSeq[Int]], puntuacion: Int, vidas: Int) {
 
   import Tablero._
 
